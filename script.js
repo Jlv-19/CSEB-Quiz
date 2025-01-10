@@ -1,5 +1,5 @@
-// Question model
-const questions = [
+// Question model (initial set of questions)
+const initialQuestions = [
     {
         questionText: "What is the capital of France?",
         options: ["Berlin", "Madrid", "Paris", "Rome"],
@@ -28,7 +28,7 @@ let shuffledQuestions = [];
 
 // Shuffle the questions array
 function shuffleQuestions() {
-    shuffledQuestions = [...questions];
+    shuffledQuestions = [...initialQuestions];
     shuffledQuestions.sort(() => Math.random() - 0.5);  // Shuffle array randomly
 }
 
@@ -49,7 +49,7 @@ function loadQuestion() {
             optionsContainer.appendChild(optionButton);
         });
     } else {
-        showScore();
+        showScore();  // When all questions are answered, show the score
     }
 }
 
@@ -84,6 +84,52 @@ function restartQuiz() {
 document.getElementById('next-btn').onclick = () => loadQuestion();
 document.getElementById('restart-btn').onclick = () => restartQuiz();
 
-// Initialize the quiz
+// Initialize the quiz with shuffled questions
 shuffleQuestions();
 loadQuestion();
+
+// Load questions dynamically from a JSON file
+function loadQuestions() {
+    fetch('questions.json')
+        .then(response => response.json())
+        .then(data => {
+            // If there is a dynamic JSON file, use it; otherwise, fall back to initial questions
+            const loadedQuestions = data.length > 0 ? data : initialQuestions;
+            shuffledQuestions = [...loadedQuestions];
+            shuffleQuestions();
+            loadQuestion();
+        })
+        .catch(err => {
+            console.error('Error loading questions from JSON:', err);
+            // If the JSON file fails, fall back to the initial set of questions
+            shuffledQuestions = [...initialQuestions];
+            shuffleQuestions();
+            loadQuestion();
+        });
+}
+
+// Start the quiz with user input (name)
+let userName = "";  // This will store the user's name
+
+function startQuiz() {
+    // Get the user's name from the input field
+    userName = document.getElementById('user-name').value.trim();
+    if (userName) {
+        localStorage.setItem('userName', userName);  // Store the name in localStorage
+        document.getElementById('user-info').style.display = 'none';  // Hide the input
+        document.getElementById('question-container').style.display = 'block';  // Show the quiz
+        loadQuestions();  // Load the questions (either from JSON or the default list)
+    } else {
+        alert('Please enter your name!');
+    }
+}
+
+// Show the score with the user's name after completing the quiz
+function showScore() {
+    document.getElementById('question-container').style.display = 'none';  // Hide the quiz
+    document.getElementById('score-container').style.display = 'block';  // Show the score container
+
+    // Retrieve the user's name from localStorage
+    let name = localStorage.getItem('userName');
+    document.getElementById('score-text').textContent = `Congratulations, ${name}! Your final score: ${score}`;
+}
