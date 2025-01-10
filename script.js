@@ -1,4 +1,4 @@
-// Question model (initial set of questions)
+// Initial set of questions
 const initialQuestions = [
     {
         questionText: "What is the capital of France?",
@@ -24,22 +24,21 @@ const initialQuestions = [
 
 let currentQuestionIndex = 0;
 let score = 0;
-let shuffledQuestions = [];
+let questions = [];  // To hold either the initial or loaded questions
 
 // Shuffle the questions array
 function shuffleQuestions() {
-    shuffledQuestions = [...initialQuestions];
-    shuffledQuestions.sort(() => Math.random() - 0.5);  // Shuffle array randomly
+    questions.sort(() => Math.random() - 0.5);  // Shuffle array randomly
 }
 
 // Load the current question
 function loadQuestion() {
-    if (currentQuestionIndex < shuffledQuestions.length) {
-        const question = shuffledQuestions[currentQuestionIndex];
+    if (currentQuestionIndex < questions.length) {
+        const question = questions[currentQuestionIndex];
         document.getElementById('question-text').textContent = question.questionText;
 
         const optionsContainer = document.getElementById('options-container');
-        optionsContainer.innerHTML = ''; // Clear previous options
+        optionsContainer.innerHTML = '';  // Clear previous options
 
         question.options.forEach(option => {
             const optionButton = document.createElement('button');
@@ -55,7 +54,7 @@ function loadQuestion() {
 
 // Check if the selected answer is correct
 function checkAnswer(selectedOption) {
-    const correctAnswer = shuffledQuestions[currentQuestionIndex].correctAnswer;
+    const correctAnswer = questions[currentQuestionIndex].correctAnswer;
     if (selectedOption === correctAnswer) {
         score++;
     }
@@ -67,7 +66,8 @@ function checkAnswer(selectedOption) {
 function showScore() {
     document.getElementById('question-container').style.display = 'none';
     document.getElementById('score-container').style.display = 'block';
-    document.getElementById('score-text').textContent = `Your final score: ${score}`;
+    const userName = localStorage.getItem('userName');
+    document.getElementById('score-text').textContent = `Congratulations, ${userName}! Your final score: ${score}`;
 }
 
 // Restart the quiz
@@ -80,40 +80,9 @@ function restartQuiz() {
     loadQuestion();
 }
 
-// Set up the page
-document.getElementById('next-btn').onclick = () => loadQuestion();
-document.getElementById('restart-btn').onclick = () => restartQuiz();
-
-// Initialize the quiz with shuffled questions
-shuffleQuestions();
-loadQuestion();
-
-// Load questions dynamically from a JSON file
-function loadQuestions() {
-    fetch('questions.json')
-        .then(response => response.json())
-        .then(data => {
-            // If there is a dynamic JSON file, use it; otherwise, fall back to initial questions
-            const loadedQuestions = data.length > 0 ? data : initialQuestions;
-            shuffledQuestions = [...loadedQuestions];
-            shuffleQuestions();
-            loadQuestion();
-        })
-        .catch(err => {
-            console.error('Error loading questions from JSON:', err);
-            // If the JSON file fails, fall back to the initial set of questions
-            shuffledQuestions = [...initialQuestions];
-            shuffleQuestions();
-            loadQuestion();
-        });
-}
-
 // Start the quiz with user input (name)
-let userName = "";  // This will store the user's name
-
 function startQuiz() {
-    // Get the user's name from the input field
-    userName = document.getElementById('user-name').value.trim();
+    const userName = document.getElementById('user-name').value.trim();
     if (userName) {
         localStorage.setItem('userName', userName);  // Store the name in localStorage
         document.getElementById('user-info').style.display = 'none';  // Hide the input
@@ -124,12 +93,26 @@ function startQuiz() {
     }
 }
 
-// Show the score with the user's name after completing the quiz
-function showScore() {
-    document.getElementById('question-container').style.display = 'none';  // Hide the quiz
-    document.getElementById('score-container').style.display = 'block';  // Show the score container
-
-    // Retrieve the user's name from localStorage
-    let name = localStorage.getItem('userName');
-    document.getElementById('score-text').textContent = `Congratulations, ${name}! Your final score: ${score}`;
+// Load questions dynamically from a JSON file
+function loadQuestions() {
+    fetch('questions.json')
+        .then(response => response.json())
+        .then(data => {
+            // If there is a dynamic JSON file, use it; otherwise, fall back to initial questions
+            questions = data.length > 0 ? data : initialQuestions;
+            shuffleQuestions();
+            loadQuestion();
+        })
+        .catch(err => {
+            console.error('Error loading questions from JSON:', err);
+            // If the JSON file fails, fall back to the initial set of questions
+            questions = initialQuestions;
+            shuffleQuestions();
+            loadQuestion();
+        });
 }
+
+// Initialize the page
+document.getElementById('start-btn').onclick = startQuiz;
+document.getElementById('next-btn').onclick = loadQuestion;
+document.getElementById('restart-btn').onclick = restartQuiz;
